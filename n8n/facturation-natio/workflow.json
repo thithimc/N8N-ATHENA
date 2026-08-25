@@ -1,0 +1,83 @@
+{
+  "name": "Facturation Natio — Typeform → Email (ex-Zapier)",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "AcyACmXB",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "c9d1e201-0001-4a77-9a01-00000000na01",
+      "name": "Facturation natio",
+      "webhookId": "6e3b2d17-0001-4c17-9107-aabbccddna01"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =====================================================================\n// CONFIGURATION — reprise du Zap Zapier « Facturation natio »\n// TODO : recopier To/Cc/Objet/prénom depuis le Zap d'origine avant de\n// le couper.\n// =====================================================================\nconst TO        = 'samia@athena-bs.fr';                       // TODO vérifier\nconst CC        = 'elodie@athena-bs.fr, lisa@athena-bs.fr';   // TODO vérifier\nconst SUBJECT   = 'Dépôt de facture - Natio';                 // TODO vérifier\nconst GREETING  = '';                                         // prénom pour « Hello X, » ; vide = « Bonjour, »\nconst FROM_NAME = 'thibaud@athena-bs.fr';\n\n// =====================================================================\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  // Le trigger n8n livre le payload webhook complet : { event_id, event_type, form_response }\n  const fr = item.json.form_response || item.json;\n\n  // Les réponses référencent les champs par id ; les intitulés sont dans\n  // definition.fields du payload.\n  const titleById = {};\n  for (const f of (fr.definition && fr.definition.fields) || []) {\n    titleById[f.id] = (f.title || '').trim();\n  }\n\n  const answers = {};\n  for (const a of fr.answers || []) {\n    const title = titleById[(a.field && a.field.id) || ''] || '';\n    let val = '';\n    switch (a.type) {\n      case 'choice':   val = a.choice && (a.choice.label || a.choice.other); break;\n      case 'choices':  val = a.choices && (a.choices.labels || []).join(', '); break;\n      case 'text':     val = a.text; break;\n      case 'date':     val = a.date; break;\n      case 'number':   val = String(a.number); break;\n      case 'boolean':  val = a.boolean ? 'Oui' : 'Non'; break;\n      case 'email':    val = a.email; break;\n      case 'file_url': val = a.file_url; break;\n      default:         val = a[a.type] != null ? String(a[a.type]) : '';\n    }\n    if (title) answers[title] = val || '';\n  }\n\n  const exact = (t) => answers[t] || '';\n  const byPrefix = (p) => {\n    for (const [t, v] of Object.entries(answers)) {\n      if (t.toLowerCase().startsWith(p.toLowerCase()) && v) return v;\n    }\n    return '';\n  };\n\n  const quiDepose   = exact('Qui dépose');\n  // Une seule des 5 questions « Type de facture (…) » est posée selon le\n  // service (logique du formulaire) : on prend celle qui a une réponse.\n  const type        = byPrefix('Type de facture');\n  const entreprise  = exact('Entreprise');\n  const dateFacture = exact('Date de la facture');\n  const montant     = byPrefix('Montant');\n  const fileUrl     = exact('Facture') || byPrefix('Facture');\n\n  const hello = GREETING ? `Hello ${GREETING},` : 'Bonjour,';\n  const body = [\n    hello,\n    '',\n    `${quiDepose} vient de déposer une nouvelle facture \"${type}\" datant du ${dateFacture} d'un montant de ${montant} € chez ${entreprise}. Merci !`,\n  ].join('\\n');\n\n  let fileName = 'facture.pdf';\n  try {\n    fileName = decodeURIComponent(new URL(fileUrl).pathname.split('/').pop()) || fileName;\n  } catch (e) { /* URL absente ou invalide : nom par défaut */ }\n\n  out.push({\n    json: {\n      to: TO,\n      cc: CC,\n      subject: SUBJECT,\n      fromName: FROM_NAME,\n      body,\n      fileUrl,\n      fileName,\n      formId: fr.form_id,\n      submittedAt: fr.submitted_at,\n    },\n  });\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "id": "c9d1e201-0002-4a77-9a01-00000000na02",
+      "name": "Preparer email"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.fileUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "typeformApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "facture"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0],
+      "id": "c9d1e201-0003-4a77-9a01-00000000na03",
+      "name": "Telecharger la facture"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Preparer email').item.json.to }}",
+        "subject": "={{ $('Preparer email').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Preparer email').item.json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "={{ $('Preparer email').item.json.cc }}",
+          "senderName": "={{ $('Preparer email').item.json.fromName }}",
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "facture"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [720, 0],
+      "id": "c9d1e201-0004-4a77-9a01-00000000na04",
+      "name": "Send Email"
+    }
+  ],
+  "connections": {
+    "Facturation natio": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Preparer email": { "main": [[{ "node": "Telecharger la facture", "type": "main", "index": 0 }]] },
+    "Telecharger la facture": { "main": [[{ "node": "Send Email", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

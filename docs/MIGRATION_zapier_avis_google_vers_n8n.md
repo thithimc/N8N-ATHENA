@@ -13,11 +13,20 @@ Un workflow prêt à importer est fourni : [`workflows/avis-google-champs-sur-ma
 
 ## Étape 0 — Prérequis côté Google (le point le plus important)
 
+> ⚠️ **Le bouton « Sign in with Google » de n8n Cloud ne fonctionne pas pour ce
+> nœud** : les API Business Profile sont à accès restreint et l'application OAuth
+> partagée de n8n n'y a pas accès — toutes les requêtes échouent alors en 404/403
+> (« Could not load list »), y compris la liste des comptes. Il faut
+> obligatoirement votre propre Client ID/Secret issu de votre propre projet
+> Google Cloud, comme décrit ci-dessous.
+
 Dans Zapier, la connexion Google Business Profile utilise l'application OAuth de
 Zapier. Dans n8n, il faut **votre propre projet Google Cloud** :
 
 1. Créer (ou réutiliser) un projet sur [console.cloud.google.com](https://console.cloud.google.com).
-2. Activer les API **My Business Business Information API** et **My Business Account Management API**.
+2. Activer les API **My Business Business Information API**, **My Business
+   Account Management API** et **Google My Business API** (la « legacy » v4,
+   utilisée pour lire les avis).
 3. ⚠️ Les API Business Profile ont un **quota par défaut de 0** : il faut demander
    l'accès à Google via le [formulaire d'accès aux API Business Profile](https://developers.google.com/my-business/content/prereqs#request-access).
    La validation prend en général quelques jours. Faites cette demande en premier,

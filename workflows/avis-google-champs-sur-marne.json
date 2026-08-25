@@ -1,0 +1,70 @@
+{
+  "name": "Avis Google - Champs-sur-Marne (migré depuis Zapier)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour"
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-new-review",
+      "name": "Nouvel avis Google",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Thibaud"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google"
+        },
+        "text": "=⭐ *Nouvel avis Google* — Athena Business School - Champs sur Marne\n\n*Note* : {{ ({ONE:'⭐',TWO:'⭐⭐',THREE:'⭐⭐⭐',FOUR:'⭐⭐⭐⭐',FIVE:'⭐⭐⭐⭐⭐'})[$json.starRating] || $json.starRating }}\n*Auteur* : {{ $json.reviewer?.displayName || 'Anonyme' }}\n*Date* : {{ $json.createTime }}\n\n> {{ $json.comment || '(avis sans commentaire)' }}",
+        "otherOptions": {}
+      },
+      "id": "action-slack-message",
+      "name": "Envoyer message Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [220, 0],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Nouvel avis Google": {
+      "main": [
+        [
+          {
+            "node": "Envoyer message Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

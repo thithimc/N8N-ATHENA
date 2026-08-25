@@ -1,0 +1,623 @@
+{
+  "name": "Avis Google → Slack - Tous les campus Athena",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 0
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-0",
+      "name": "Avis Google - Champs-sur-Marne",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-77"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-0",
+      "name": "Slack - Champs-sur-Marne",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        0
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 6
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-1",
+      "name": "Avis Google - Evry",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        220
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-evry"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-1",
+      "name": "Slack - Evry",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        220
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 12
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-2",
+      "name": "Avis Google - Lyon",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        440
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-lyon"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-2",
+      "name": "Slack - Lyon",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        440
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 18
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-3",
+      "name": "Avis Google - Marseille",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        660
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-marseille"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-3",
+      "name": "Slack - Marseille",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        660
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 24
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-4",
+      "name": "Avis Google - Montpellier",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        880
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-montpellier"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-4",
+      "name": "Slack - Montpellier",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        880
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 30
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-5",
+      "name": "Avis Google - Nice",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1100
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-nice"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-5",
+      "name": "Slack - Nice",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        1100
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 36
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-6",
+      "name": "Avis Google - Perpignan",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1320
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-perpignan"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-6",
+      "name": "Slack - Perpignan",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        1320
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 42
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-7",
+      "name": "Avis Google - Villepinte",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1540
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-villepinte"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-7",
+      "name": "Slack - Villepinte",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        1540
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyHour",
+              "minute": 48
+            }
+          ]
+        },
+        "event": "reviewAdded",
+        "account": "",
+        "location": ""
+      },
+      "id": "trigger-gbp-8",
+      "name": "Avis Google - Villejuif",
+      "type": "n8n-nodes-base.googleBusinessProfileTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1760
+      ],
+      "credentials": {
+        "googleBusinessProfileOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Google Business Profile - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#avis-google-villejuif"
+        },
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "slack-8",
+      "name": "Slack - Villejuif",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        1760
+      ],
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "REMPLACER_ID_CREDENTIAL",
+          "name": "Slack - Athena"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Avis Google - Champs-sur-Marne": {
+      "main": [
+        [
+          {
+            "node": "Slack - Champs-sur-Marne",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Evry": {
+      "main": [
+        [
+          {
+            "node": "Slack - Evry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Lyon": {
+      "main": [
+        [
+          {
+            "node": "Slack - Lyon",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Marseille": {
+      "main": [
+        [
+          {
+            "node": "Slack - Marseille",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Montpellier": {
+      "main": [
+        [
+          {
+            "node": "Slack - Montpellier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Nice": {
+      "main": [
+        [
+          {
+            "node": "Slack - Nice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Perpignan": {
+      "main": [
+        [
+          {
+            "node": "Slack - Perpignan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Villepinte": {
+      "main": [
+        [
+          {
+            "node": "Slack - Villepinte",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Avis Google - Villejuif": {
+      "main": [
+        [
+          {
+            "node": "Slack - Villejuif",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

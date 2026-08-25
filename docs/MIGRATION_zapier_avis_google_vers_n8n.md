@@ -7,7 +7,19 @@ Zap d'origine :
 | 1. Déclencheur | Google Business Profile — *New Review* (Athena Business School - Champs sur Marne) | Nœud **Google Business Profile Trigger** (événement *Review Added*, polling) |
 | 2. Action | Slack — *Send Channel Message* | Nœud **Slack** (Message → Send) |
 
-Un workflow prêt à importer est fourni : [`workflows/avis-google-champs-sur-marne.json`](../workflows/avis-google-champs-sur-marne.json).
+Deux workflows prêts à importer sont fournis :
+
+- [`workflows/avis-google-champs-sur-marne.json`](../workflows/avis-google-champs-sur-marne.json) —
+  version mono-campus (Champs-sur-Marne uniquement) ;
+- [`workflows/avis-google-tous-campus.json`](../workflows/avis-google-tous-campus.json) —
+  version complète : une paire « trigger avis → message Slack » pour chacun des
+  9 campus (Champs-sur-Marne, Evry, Lyon, Marseille, Montpellier, Nice,
+  Perpignan, Villepinte, Villejuif), même texte de message, un canal Slack
+  différent par campus (noms de canaux à adapter dans chaque nœud Slack ;
+  seul `#avis-google-77` pour Champs-sur-Marne reprend le canal réel du Zap).
+  Les triggers sont décalés de 6 minutes les uns des autres pour lisser la
+  consommation de quota API. Dans chaque trigger, sélectionner le credential
+  Google puis la Location du campus correspondant.
 
 ---
 

@@ -38,7 +38,7 @@
           "mode": "name",
           "value": "#avis-google-77"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -95,7 +95,7 @@
           "mode": "name",
           "value": "#avis-google-evry"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -152,7 +152,7 @@
           "mode": "name",
           "value": "#avis-google-lyon"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -209,7 +209,7 @@
           "mode": "name",
           "value": "#avis-google-marseille"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -266,7 +266,7 @@
           "mode": "name",
           "value": "#avis-google-montpellier"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -323,7 +323,7 @@
           "mode": "name",
           "value": "#avis-google-nice"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -380,7 +380,7 @@
           "mode": "name",
           "value": "#avis-google-perpignan"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -437,7 +437,7 @@
           "mode": "name",
           "value": "#avis-google-villepinte"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -494,7 +494,7 @@
           "mode": "name",
           "value": "#avis-google-villejuif"
         },
-        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ $json.comment || '(avis sans commentaire)' }}\n📅 {{ $json.createTime }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }

@@ -34,7 +34,7 @@
           "mode": "name",
           "value": "#avis-google"
         },
-        "text": "=⭐ *Nouvel avis Google* — Athena Business School - Champs sur Marne\n\n*Note* : {{ ({ONE:'⭐',TWO:'⭐⭐',THREE:'⭐⭐⭐',FOUR:'⭐⭐⭐⭐',FIVE:'⭐⭐⭐⭐⭐'})[$json.starRating] || $json.starRating }}\n*Auteur* : {{ $json.reviewer?.displayName || 'Anonyme' }}\n*Date* : {{ $json.createTime }}\n\n> {{ $json.comment || '(avis sans commentaire)' }}",
+        "text": "=⭐ *Nouvel avis Google !*\n👤 {{ $json.reviewer?.displayName || 'Anonyme' }}\n⭐ {{ ({ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5})[$json.starRating] || $json.starRating }}/5\n💬 {{ (() => { const c = ($json.comment || '').trim(); if (!c) return '(avis sans commentaire)'; if (c.includes('(Original)')) return c.split('(Original)').pop().trim(); return c.split('(Translated by Google)')[0].trim(); })() }}\n📅 {{ $json.createTime }}",
         "otherOptions": {}
       },
       "id": "action-slack-message",

@@ -1,0 +1,203 @@
+{
+  "name": "Facturation Campus — Typeform → Email (ex-Zapier)",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "GoYjt7QL",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0],
+      "id": "a1f06c01-0006-4c77-9a01-000000000006",
+      "name": "Facturation Campus 06",
+      "webhookId": "5f2a1c06-0006-4b06-8006-aabbcc000006"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "wWiTmFbt",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 180],
+      "id": "a1f06c01-0013-4c77-9a01-000000000013",
+      "name": "Facturation Campus 13",
+      "webhookId": "5f2a1c06-0013-4b06-8006-aabbcc000013"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "Ei4mhN30",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 360],
+      "id": "a1f06c01-0034-4c77-9a01-000000000034",
+      "name": "Facturation Campus 34",
+      "webhookId": "5f2a1c06-0034-4b06-8006-aabbcc000034"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "prq60cLp",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 540],
+      "id": "a1f06c01-0066-4c77-9a01-000000000066",
+      "name": "Facturation Campus 66",
+      "webhookId": "5f2a1c06-0066-4b06-8006-aabbcc000066"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "ISq3V0un",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 720],
+      "id": "a1f06c01-0069-4c77-9a01-000000000069",
+      "name": "Facturation Campus 69",
+      "webhookId": "5f2a1c06-0069-4b06-8006-aabbcc000069"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "O6cupDZd",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 900],
+      "id": "a1f06c01-0077-4c77-9a01-000000000077",
+      "name": "Facturation Campus 77",
+      "webhookId": "5f2a1c06-0077-4b06-8006-aabbcc000077"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "M6EyJ8VW",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 1080],
+      "id": "a1f06c01-0091-4c77-9a01-000000000091",
+      "name": "Facturation Campus 91",
+      "webhookId": "5f2a1c06-0091-4b06-8006-aabbcc000091"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "zKkRmCZi",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 1260],
+      "id": "a1f06c01-0093-4c77-9a01-000000000093",
+      "name": "Facturation Campus 93",
+      "webhookId": "5f2a1c06-0093-4b06-8006-aabbcc000093"
+    },
+    {
+      "parameters": {
+        "authentication": "accessToken",
+        "formId": "STqpGfRz",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 1440],
+      "id": "a1f06c01-0094-4c77-9a01-000000000094",
+      "name": "Facturation Campus 94",
+      "webhookId": "5f2a1c06-0094-4b06-8006-aabbcc000094"
+    },
+    {
+      "parameters": {
+        "jsCode": "// =====================================================================\n// CONFIGURATION — reprise des Zaps Zapier « Typeform → Send Email »\n// La ligne 77 reproduit le Zap d'origine (capture d'écran).\n// TODO : vérifier/adapter to, cc, subject et greeting pour les 8 autres\n// campus en recopiant les valeurs de chaque Zap avant de le couper.\n// =====================================================================\nconst FROM_NAME = 'thibaud@athena-bs.fr';\n\nconst CAMPUS = {\n  // form_id Typeform : { destinataires }\n  GoYjt7QL: { campus: '06', subject: 'Dépôt de facture - Nice',        greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  wWiTmFbt: { campus: '13', subject: 'Dépôt de facture - Marseille',   greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  Ei4mhN30: { campus: '34', subject: 'Dépôt de facture - Montpellier', greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  prq60cLp: { campus: '66', subject: 'Dépôt de facture - Perpignan',   greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  ISq3V0un: { campus: '69', subject: 'Dépôt de facture - Lyon',        greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  O6cupDZd: { campus: '77', subject: 'Dépôt de facture - CSM',         greeting: 'Samia', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' },\n  M6EyJ8VW: { campus: '91', subject: 'Dépôt de facture - Evry',        greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  zKkRmCZi: { campus: '93', subject: 'Dépôt de facture - Villepinte',  greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n  STqpGfRz: { campus: '94', subject: 'Dépôt de facture - Villejuif',   greeting: '', to: 'samia@athena-bs.fr', cc: 'elodie@athena-bs.fr, lisa@athena-bs.fr' }, // TODO vérifier\n};\n\n// =====================================================================\n\nconst out = [];\n\nfor (const item of $input.all()) {\n  // Le trigger n8n livre le payload webhook complet : { event_id, event_type, form_response }\n  const fr = item.json.form_response || item.json;\n  const conf = CAMPUS[fr.form_id];\n  if (!conf) {\n    throw new Error(`Formulaire inconnu : ${fr.form_id} — ajoutez-le dans CAMPUS.`);\n  }\n\n  // Les réponses référencent les champs par id ; les intitulés (identiques\n  // sur les 9 formulaires) sont dans definition.fields du payload.\n  const titleById = {};\n  for (const f of (fr.definition && fr.definition.fields) || []) {\n    titleById[f.id] = (f.title || '').trim();\n  }\n\n  const answers = {};\n  for (const a of fr.answers || []) {\n    const title = titleById[(a.field && a.field.id) || ''] || '';\n    let val = '';\n    switch (a.type) {\n      case 'choice':   val = a.choice && (a.choice.label || a.choice.other); break;\n      case 'choices':  val = a.choices && (a.choices.labels || []).join(', '); break;\n      case 'text':     val = a.text; break;\n      case 'date':     val = a.date; break;\n      case 'number':   val = String(a.number); break;\n      case 'boolean':  val = a.boolean ? 'Oui' : 'Non'; break;\n      case 'email':    val = a.email; break;\n      case 'file_url': val = a.file_url; break;\n      default:         val = a[a.type] != null ? String(a[a.type]) : '';\n    }\n    if (title) answers[title] = val || '';\n  }\n\n  const exact = (t) => answers[t] || '';\n  const byPrefix = (p) => {\n    for (const [t, v] of Object.entries(answers)) {\n      if (t.toLowerCase().startsWith(p.toLowerCase())) return v;\n    }\n    return '';\n  };\n\n  const quiDepose         = exact('Qui dépose');\n  const compteDebiteur    = exact('Compte débiteur');\n  const typeFacture       = exact('Type de facture');\n  const typeFactureMarket = exact('Type de facture (Market)');\n  const commercant        = exact('Commerçant');\n  const dateFacture       = exact('Date de la facture');\n  const montant           = byPrefix('Montant');\n  const fileUrl           = exact('Facture') || byPrefix('Facture');\n\n  // Une seule des deux questions « Type de facture » est posée (logique du\n  // formulaire) — Zapier concaténait les deux, l'une étant vide.\n  const type = [typeFacture, typeFactureMarket].filter(Boolean).join('');\n\n  const hello = conf.greeting ? `Hello ${conf.greeting},` : 'Bonjour,';\n  const body = [\n    hello,\n    '',\n    `${quiDepose} vient de déposer une nouvelle facture \"${type}\" datant du ${dateFacture} d'un montant de ${montant} € chez ${commercant} à débiter du ${compteDebiteur}. Merci !`,\n  ].join('\\n');\n\n  let fileName = 'facture.pdf';\n  try {\n    fileName = decodeURIComponent(new URL(fileUrl).pathname.split('/').pop()) || fileName;\n  } catch (e) { /* URL absente ou invalide : nom par défaut */ }\n\n  out.push({\n    json: {\n      to: conf.to,\n      cc: conf.cc,\n      subject: conf.subject,\n      fromName: FROM_NAME,\n      body,\n      fileUrl,\n      fileName,\n      campus: conf.campus,\n      formId: fr.form_id,\n      submittedAt: fr.submitted_at,\n    },\n  });\n}\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [340, 720],
+      "id": "b2c3d4e5-1111-4aaa-9bbb-c0ffee000001",
+      "name": "Preparer email"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.fileUrl }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "typeformApi",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "facture"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [580, 720],
+      "id": "b2c3d4e5-2222-4aaa-9bbb-c0ffee000002",
+      "name": "Telecharger la facture"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Preparer email').item.json.to }}",
+        "subject": "={{ $('Preparer email').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Preparer email').item.json.body }}",
+        "options": {
+          "appendAttribution": false,
+          "ccList": "={{ $('Preparer email').item.json.cc }}",
+          "senderName": "={{ $('Preparer email').item.json.fromName }}",
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "facture"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [820, 720],
+      "id": "b2c3d4e5-3333-4aaa-9bbb-c0ffee000003",
+      "name": "Send Email"
+    }
+  ],
+  "connections": {
+    "Facturation Campus 06": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 13": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 34": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 66": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 69": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 77": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 91": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 93": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Facturation Campus 94": { "main": [[{ "node": "Preparer email", "type": "main", "index": 0 }]] },
+    "Preparer email": { "main": [[{ "node": "Telecharger la facture", "type": "main", "index": 0 }]] },
+    "Telecharger la facture": { "main": [[{ "node": "Send Email", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

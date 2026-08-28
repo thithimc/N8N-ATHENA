@@ -19,6 +19,10 @@ Cela vaut pour les **check-in automatiques** (self check-in sur les PR) : si
 rien n'a changé, reprogrammer le prochain check-in **en silence**, sans écrire à
 l'utilisateur. Ne parler que si le check-in révèle un problème.
 
+**Silence total = aucun texte.** Ne PAS répondre « RAS », « rien à signaler »,
+« nothing to report » ni aucun accusé, même court : quand il n'y a pas de
+problème, terminer le tour sans produire de message à l'utilisateur.
+
 Le travail demandé explicitement par l'utilisateur reçoit évidemment une réponse
 normale — cette règle concerne les notifications proactives et les comptes rendus
 de surveillance.

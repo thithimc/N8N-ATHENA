@@ -1,0 +1,97 @@
+{
+  "name": "Demande de fournitures (Typeform -> Gmail)",
+  "nodes": [
+    {
+      "parameters": {
+        "formId": "REMPLACER_PAR_L_ID_DU_FORMULAIRE",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "id": "10f7b72f-f0ef-4500-8310-d115d7cb49f7",
+      "name": "Typeform - Nouvelle demande",
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "f808f25a-b25a-466b-82c4-e386435f66a2",
+      "credentials": {
+        "typeformApi": {
+          "id": "REMPLACER",
+          "name": "Typeform - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Migration du Zap \"Demande de fournitures\" (Typeform -> Gmail).\n//\n// Le formulaire pose, pour chaque produit, une question \"Avez-vous besoin de X ?\"\n// suivie d'une question \"Combien d'unite(s) souhaitez-vous commander ?\".\n// Les 6 questions \"Combien...\" ont le MEME intitule -> impossible de les\n// distinguer par titre. On lit donc les reponses BRUTES et on rattache chaque\n// quantite au produit de la question \"Avez-vous besoin de...\" qui la precede.\n//\n// PREREQUIS : dans le noeud \"Typeform Trigger\", regler\n//   Simplify Answers = OFF   et   Only Answers = OFF\n// sinon n8n aplatit les reponses et fusionne les 6 quantites.\n\nconst body = $input.first().json;\nconst root = body.form_response || body;\nconst fields  = (root && root.definition && root.definition.fields) || body.definition && body.definition.fields || [];\nconst answers = (root && root.answers) || body.answers || [];\n\nif (!fields.length || !answers.length) {\n  throw new Error(\n    'Reponses Typeform brutes introuvables. Dans le noeud \"Typeform Trigger\", ' +\n    'mets \"Simplify Answers\" = OFF et \"Only Answers\" = OFF, puis relance. ' +\n    'Cles recues : ' + JSON.stringify(Object.keys(body))\n  );\n}\n\n// Valeur lisible d'une reponse Typeform quel que soit son type.\nfunction answerValue(a) {\n  if (!a) return '';\n  switch (a.type) {\n    case 'text': return a.text;\n    case 'number': return a.number;\n    case 'email': return a.email;\n    case 'phone_number': return a.phone_number;\n    case 'url': return a.url;\n    case 'boolean': return a.boolean ? 'oui' : 'non';\n    case 'date': return a.date;\n    case 'choice': return (a.choice && (a.choice.label || a.choice.other)) || '';\n    case 'choices': return ((a.choices && a.choices.labels) || []).join(', ');\n    default: return a[a.type] != null ? a[a.type] : '';\n  }\n}\n\n// Reponses rangees dans l'ordre d'affichage du formulaire.\nconst byId = {};\nanswers.forEach(a => { if (a.field && a.field.id) byId[a.field.id] = a; });\nconst ordered = fields\n  .map(f => ({ title: f.title || '', answer: byId[f.id] }))\n  .filter(x => x.answer);\n\nconst norm = s => (s || '').toLowerCase();\n\n// Premiere reponse dont le titre contient le mot-cle (champs uniques).\nfunction byKeyword() {\n  const kws = Array.prototype.slice.call(arguments);\n  const m = ordered.find(x => kws.some(k => norm(x.title).includes(k)));\n  return m ? answerValue(m.answer) : '';\n}\n\nconst campus    = byKeyword('campus');\nconst demandeur = byKeyword('demandeur');\nconst remarques = byKeyword('remarque', 'complementaire', 'complémentaire');\n\n// Produits, dans l'ordre du mail d'origine. `match` detecte la question\n// \"Avez-vous besoin de...\" correspondante.\nconst produits = [\n  { label: 'ordinateur(s)',      match: t => t.includes('ordinateur') },\n  { label: 'double(s) écran(s)', match: t => t.includes('ecran') || t.includes('écran') },\n  { label: 'souris',             match: t => t.includes('souris') },\n  { label: 'clavier(s)',         match: t => t.includes('clavier') },\n  { label: 'casque(s)',          match: t => t.includes('casque') },\n  { label: 'Chaise(s)',          match: t => t.includes('chaise') },\n];\n\n// Parcours dans l'ordre : chaque \"Combien...\" herite du dernier produit vu.\nconst qtyByLabel = {};\nlet current = null;\nfor (const item of ordered) {\n  const t = norm(item.title);\n  if (t.startsWith('avez-vous besoin')) {\n    const p = produits.find(pr => pr.match(t));\n    current = p ? p.label : null;\n  } else if (t.startsWith('combien')) {\n    if (current) qtyByLabel[current] = answerValue(item.answer);\n  }\n}\n\nconst lignes = produits\n  .map(p => {\n    const q = qtyByLabel[p.label];\n    return `- ${q != null && q !== '' ? q : 0} ${p.label}`;\n  })\n  .join('\\n');\n\nconst subject = `Demande de fournitures - ${campus}`;\n\nconst message =\n`Hello Julie,\n\n${demandeur} a fait une demande pour le campus de ${campus}.\n\nIl faut acheter :\n${lignes}\n\nRemarques supplémentaires :\n${remarques}\n\nBonne journée.`;\n\nreturn [{ json: { to: 'julie@athena-bs.fr', subject, message, campus, demandeur } }];\n"
+      },
+      "id": "5802519b-7857-4503-91c8-6087d379e8c8",
+      "name": "Construire l'e-mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {
+          "senderName": "TIBO",
+          "appendAttribution": false
+        }
+      },
+      "id": "26a0ced2-142e-4cfb-afe5-d539c2fa4e69",
+      "name": "Gmail - Envoyer a Julie",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        300
+      ],
+      "webhookId": "d156a2ea-83fe-4578-8185-f38b4462ffdd",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REMPLACER",
+          "name": "Gmail - thibaud@athena-bs.fr"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Typeform - Nouvelle demande": {
+      "main": [
+        [
+          {
+            "node": "Construire l'e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construire l'e-mail": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Envoyer a Julie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "meta": {}
+}

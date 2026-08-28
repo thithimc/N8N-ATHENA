@@ -53,28 +53,37 @@ Typeform - Nouvelle demande  →  Construire l'e-mail (Code)  →  Gmail - Envoy
 3. **Gmail - Envoyer à Julie** (`gmail`, opération *send*) — envoie l'e-mail en texte brut,
    nom d'expéditeur `TIBO`.
 
-## Point clé — 6 questions au titre identique
+## Point clé — 6 questions au titre identique + réponses brutes obligatoires
 
-Le formulaire pose **6 fois** la même question « Combien d'unités souhaitez-vous
-commander ? » (une par produit). Dans Zapier chaque champ garde une clé distincte ;
-dans n8n l'option « simplifier les réponses » **écrase** les clés de même titre et on
-perdrait 5 quantités sur 6.
+Le formulaire pose **6 fois** la même question « Combien d'unité(s) souhaitez-vous
+commander ? » (une par produit), chacune précédée d'une question « Avez-vous besoin
+de X ? ». Dans Zapier chaque champ garde une clé distincte ; dans n8n l'option
+« Simplify Answers » **écrase** les clés de même titre et on perd 5 quantités sur 6
+(symptôme observé : **e-mail entièrement vide**).
 
-➡️ Le workflow lit donc les **réponses brutes** (`form_response.answers` +
-`form_response.definition.fields`) et le nœud Code mappe les 6 quantités à leur produit
-**dans l'ordre d'affichage du formulaire** :
+➡️ Deux conditions pour que ça marche :
 
-| Position | Produit |
-|----------|---------|
-| 1 | ordinateur(s) |
-| 2 | double(s) écran(s) |
-| 3 | souris |
-| 4 | clavier(s) |
-| 5 | casque(s) |
-| 6 | Chaise(s) |
+1. **Dans le nœud Typeform Trigger : `Simplify Answers = OFF` et `Only Answers = OFF`.**
+   (Vérifier dans l'UI après import — un booléen d'import ne « prend » pas toujours.)
+   Le nœud Code lève une erreur explicite si les réponses brutes sont absentes.
+2. Le nœud Code rattache chaque quantité au produit via la question
+   **« Avez-vous besoin de… » qui la précède** (et non par ordre d'index). Il matche
+   par **mot-clé** dans l'intitulé (`ordinateur`, `écran`/`ecran`, `souris`, `clavier`,
+   `casque`, `chaise`) — tolérant aux accents et apostrophes — et gère les **sauts
+   logiques Typeform** (si « Non » saute la question « Combien », la quantité vaut 0
+   sans décaler les autres produits).
 
-> ⚠️ Si l'ordre des questions change dans Typeform, ajuster le tableau `produits`
-> dans le nœud Code.
+| Question « Avez-vous besoin de… » | Produit dans le mail |
+|-----------------------------------|----------------------|
+| ordinateur(s) | ordinateur(s) |
+| double(s) écran(s) | double(s) écran(s) |
+| souris | souris |
+| clavier(s) | clavier(s) |
+| casque(s) | casque(s) |
+| chaise(s) | Chaise(s) |
+
+> ⚠️ Si un **nouveau produit** est ajouté au formulaire, ajouter une ligne au tableau
+> `produits` dans le nœud Code (label + mot-clé de détection).
 
 ## Décision — le « 0 » du Zap d'origine
 
@@ -93,10 +102,11 @@ Code.
 3. **Gmail** : sélectionner le credential OAuth2 du compte **`thibaud@athena-bs.fr`**
    (c'est ce compte qui définit le « From » ; le nom d'expéditeur `TIBO` est déjà réglé
    dans les options du nœud).
-4. **Vérifier les titres exacts des questions** dans le nœud Code
-   (`Quel est le nom du campus ?`, `Quel est le nom du demandeur ?`, etc.) — ils doivent
-   correspondre au caractère près à ceux du formulaire (apostrophes/accents inclus ; le
-   code gère déjà les deux variantes d'apostrophe et d'accent courantes).
+4. **Régler le nœud Typeform** : `Simplify Answers = OFF`, `Only Answers = OFF`
+   (indispensable — voir « Point clé » ci-dessus). Le nœud Code matche les questions
+   par mot-clé, donc aucun intitulé n'est à recopier ; il faut seulement que les
+   libellés du formulaire contiennent bien `campus`, `demandeur`, et les mots-clés
+   produits (`ordinateur`, `écran`, `souris`, `clavier`, `casque`, `chaise`).
 5. **Tester** avec une réponse réelle, puis **activer** le workflow.
 
 > Les `id`/`name` de credentials dans le JSON sont des placeholders (`REMPLACER`) :

@@ -1,0 +1,97 @@
+{
+  "name": "Demande de fournitures (Typeform -> Gmail)",
+  "nodes": [
+    {
+      "parameters": {
+        "formId": "REMPLACER_PAR_L_ID_DU_FORMULAIRE",
+        "simplifyAnswers": false,
+        "onlyAnswers": false
+      },
+      "id": "1fbe56e4-f087-4fdd-aef7-3fe516446cb9",
+      "name": "Typeform - Nouvelle demande",
+      "type": "n8n-nodes-base.typeformTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "efd06a94-c691-468f-a333-e490d8f970cd",
+      "credentials": {
+        "typeformApi": {
+          "id": "REMPLACER",
+          "name": "Typeform - Athena"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Migration du Zap \"Demande de fournitures\" (Typeform -> Gmail).\n// Le formulaire Typeform contient 6 questions au titre IDENTIQUE\n// (\"Combien d'unites souhaitez-vous commander ?\"), une par produit.\n// On lit donc les reponses BRUTES (form_response) et on mappe chaque\n// quantite a son produit en respectant l'ordre des champs du formulaire.\n\nconst body = $input.first().json;\nconst fr = body.form_response || body;\nconst fields = (fr.definition && fr.definition.fields) || [];\nconst answers = fr.answers || [];\n\n// Valeur lisible d'une reponse Typeform quel que soit son type.\nfunction answerValue(a) {\n  if (!a) return '';\n  switch (a.type) {\n    case 'text': return a.text;\n    case 'number': return a.number;\n    case 'email': return a.email;\n    case 'phone_number': return a.phone_number;\n    case 'url': return a.url;\n    case 'boolean': return a.boolean ? 'oui' : 'non';\n    case 'date': return a.date;\n    case 'choice': return (a.choice && (a.choice.label || a.choice.other)) || '';\n    case 'choices': return ((a.choices && a.choices.labels) || []).join(', ');\n    default: return a[a.type] != null ? a[a.type] : '';\n  }\n}\n\n// Reponses rangees dans l'ordre d'affichage du formulaire.\nconst byId = {};\nanswers.forEach(a => { if (a.field && a.field.id) byId[a.field.id] = a; });\nconst titleById = {};\nfields.forEach(f => { titleById[f.id] = f.title; });\n\nconst ordered = fields\n  .map(f => ({ id: f.id, title: f.title, answer: byId[f.id] }))\n  .filter(x => x.answer);\n\n// Premiere reponse dont le titre correspond (champs uniques).\nfunction firstByTitle(t) {\n  const m = ordered.find(x => x.title === t);\n  return m ? answerValue(m.answer) : '';\n}\n\nconst campus     = firstByTitle('Quel est le nom du campus ?');\nconst demandeur  = firstByTitle('Quel est le nom du demandeur ?');\nconst remarques  = firstByTitle('Avez-vous des besoins ou remarques complementaires ?')\n                || firstByTitle(\"Avez-vous des besoins ou remarques complémentaires ?\");\n\n// Les 6 quantites, dans l'ordre des champs du formulaire.\nconst quantites = ordered\n  .filter(x => x.title === \"Combien d'unites souhaitez-vous commander ?\"\n            || x.title === \"Combien d’unités souhaitez-vous commander ?\")\n  .map(x => answerValue(x.answer));\n\n// Ordre des produits identique au Zap d'origine.\nconst produits = [\n  'ordinateur(s)',\n  'double(s) ecran(s)',\n  'souris',\n  'clavier(s)',\n  'casque(s)',\n  'Chaise(s)',\n];\n\nconst lignes = produits\n  .map((label, i) => `- ${quantites[i] != null && quantites[i] !== '' ? quantites[i] : 0} ${label}`)\n  .join('\\n');\n\nconst subject = `Demande de fournitures - ${campus}`;\n\nconst message =\n`Hello Julie,\n\n${demandeur} a fait une demande pour le campus de ${campus}.\n\nIl faut acheter :\n${lignes}\n\nRemarques supplementaires :\n${remarques}\n\nBonne journee.`;\n\nreturn [{ json: { to: 'julie@athena-bs.fr', subject, message, campus, demandeur } }];\n"
+      },
+      "id": "dd5cab7b-4811-4f68-9acb-c3a6177cf87b",
+      "name": "Construire l'e-mail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.message }}",
+        "options": {
+          "senderName": "TIBO",
+          "appendAttribution": false
+        }
+      },
+      "id": "671e28fb-1cef-4afd-9e6c-a20d3809528b",
+      "name": "Gmail - Envoyer a Julie",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        880,
+        300
+      ],
+      "webhookId": "bd7a1dbb-140f-4d7f-a88c-22224fcd5212",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REMPLACER",
+          "name": "Gmail - thibaud@athena-bs.fr"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Typeform - Nouvelle demande": {
+      "main": [
+        [
+          {
+            "node": "Construire l'e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construire l'e-mail": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Envoyer a Julie",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "meta": {}
+}

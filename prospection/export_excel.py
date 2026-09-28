@@ -9,9 +9,9 @@ for r in R: forms[n(r['Ville'])][r['Ville']]+=1
 best={k:max(c,key=lambda f:(sum(ch>'\x7f' for ch in f),c[f])) for k,c in forms.items()}
 for r in R: r['Ville']=best[n(r['Ville'])]
 # dédoublonnage offres / entreprises : on garde tout, mais tri
-R.sort(key=lambda r:(r['Ville'],r['Entreprise'].lower()))
-cols=['Entreprise','Filière','Ville','CP','Adresse','Secteur','Métiers','Type','Intitulé','Niveau','Contrat','Publication','Organisme_école','SIRET','Pertinence','Lien']
-W={'Entreprise':34,'Filière':12,'Ville':22,'CP':8,'Adresse':38,'Secteur':40,'Métiers':60,'Type':30,'Intitulé':40,'Niveau':18,'Contrat':22,'Publication':12,'Organisme_école':10,'SIRET':16,'Pertinence':10,'Lien':50}
+R.sort(key=lambda r:(r['Catégorie'],r['Ville'],r['Entreprise'].lower()))
+cols=['Entreprise','Catégorie','Filière','Ville','CP','Adresse','Secteur','Métiers','Type','Intitulé','Niveau','Contrat','Publication','Organisme_école','SIRET','Pertinence','Lien']
+W={'Entreprise':34,'Catégorie':30,'Filière':12,'Ville':22,'CP':8,'Adresse':38,'Secteur':40,'Métiers':60,'Type':30,'Intitulé':40,'Niveau':18,'Contrat':22,'Publication':12,'Organisme_école':10,'SIRET':16,'Pertinence':10,'Lien':50}
 wb=Workbook(); first=True
 def sheet(name,rows,c=cols):
     global first
@@ -41,10 +41,18 @@ for r in R:
 for v,a in sorted(agg.items(),key=lambda x:-x[1][0]): ws.append([v]+a)
 for i in range(1,6): ws.cell(1,i).font=Font(bold=True)
 ws.column_dimensions['A'].width=28
+ws=wb.create_sheet('Par catégorie'); ws.append(['Catégorie','Nb total','MCO','NDRC','Offres en cours','Exemples d\'entreprises'])
+aggc=collections.defaultdict(lambda:[0,0,0,0,collections.Counter()])
+for r in R:
+    a=aggc[r['Catégorie']]; a[0]+=1; a[1]+='MCO' in r['Filière']; a[2]+='NDRC' in r['Filière']; a[3]+=not r['Type'].startswith('Entreprise'); a[4][r['Entreprise']]+=1
+for v,a in sorted(aggc.items(),key=lambda x:-x[1][0]): ws.append([v]+a[:4]+[', '.join(e for e,_ in a[4].most_common(8))])
+for i in range(1,7): ws.cell(1,i).font=Font(bold=True)
+ws.column_dimensions['A'].width=45; ws.column_dimensions['F'].width=110
+wb.move_sheet('Par catégorie',offset=-(len(wb.sheetnames)-1))
 wb.save('prospection/entreprises_alternance_BTS_MCO_NDRC_94.xlsx')
 import csv
 with open('prospection/entreprises_alternance_BTS_MCO_NDRC_94.csv','w',newline='',encoding='utf-8-sig') as f:
     w=csv.DictWriter(f,fieldnames=cols,delimiter=';',extrasaction='ignore'); w.writeheader(); w.writerows(R)
-print(len(R),len(offres),len(ent),sum('MCO' in r['Filière'] for r in ent),sum('NDRC' in r['Filière'] for r in ent),len(agg))
+print(sorted(((a[0],v) for v,a in aggc.items()),reverse=True));print(len(R),len(offres),len(ent),sum('MCO' in r['Filière'] for r in ent),sum('NDRC' in r['Filière'] for r in ent),len(agg))
 for r in offres[:12]: print(r['Publication'],r['Entreprise'],'|',r['Intitulé'],'|',r['Ville'],'|',r['Niveau'])
 print(collections.Counter(r['Entreprise'] for r in ent).most_common(25))

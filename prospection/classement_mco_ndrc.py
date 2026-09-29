@@ -1,5 +1,15 @@
 import json,re,unicodedata,collections
-d=json.load(open('prospection/all94.json'))
+import os,math
+# Usage : DEPT=77 CENTRE="48.8528,2.6031" python3 prospection/classement_mco_ndrc.py
+DEPT=os.environ.get('DEPT','94')
+CENTRE=[float(x) for x in os.environ['CENTRE'].split(',')] if os.environ.get('CENTRE') else None
+def dist_km(h):
+    c=(h.get('location') or {}).get('coordinates')
+    if not CENTRE or not c: return ''
+    la1,lo1,la2,lo2=map(math.radians,(CENTRE[0],CENTRE[1],c[1],c[0]))
+    a=math.sin((la2-la1)/2)**2+math.cos(la1)*math.cos(la2)*math.sin((lo2-lo1)/2)**2
+    return round(2*6371*math.asin(math.sqrt(a)),1)
+d=json.load(open(f'prospection/all{DEPT}.json'))
 def n(s): return unicodedata.normalize('NFKD',s or '').encode('ascii','ignore').decode().lower()
 MCO=re.compile(r"vendeu|vente|magasin|rayon|caisse|boutique|libre-service|commerce de detail|merchandis|manager de|responsable de (boutique|magasin|rayon|caisses|point de vente|departement)|gerant.*(magasin|commerce|superette)|epicerie|drive|e-commerce|chef de rayon|conseiller.*(vente|beaute)|adjoint.*(magasin|responsable)|directeur.*magasin|employe.*commerce")
 NDRC=re.compile(r"commercia|technico-commercial|attache commercial|charge.*(clientele|affaires|client)|conseiller.*(clientele|client|commercial|immobilier|gestion de patrimoine|en assurance|financier)|negociateur|business develop|televend|teleconseil|teleprospect|telemarket|prospect|representant|agent commercial|account|chef de secteur|charge.*accueil en banque|delegue|courtier|souscripteur|chargee? de developpement|ingenieur commercial|vendeu.*(automobile|grossiste)|relation client")
@@ -35,19 +45,21 @@ def categorie(sect,texte):
     return 'Non précisé' if not sect else 'Autres'
 rows=collections.OrderedDict()
 for h in d:
-    if h['sub_type']=='formation' or h.get('departement_code')!='94': continue
+    if h['sub_type']=='formation' or h.get('departement_code')!=DEPT: continue
     labs=(h.get('rome_labels') or [])
+    offre=h['sub_type']!='recruteurs_lba'
+    if offre: labs=[]  # pour une offre, seul l'intitulé compte (les métiers ROME associés sont trop larges)
     txt_l=[n(x) for x in labs]
     title=h.get('title') or ''
     if h['sub_type']!='recruteurs_lba': txt_l.append(n(title))
     sect=n(h.get('activity_sector'))
     mco=[l for l,t in zip(labs+[title],txt_l) if MCO.search(t) and not BAD.search(t) and not re.search(r'apres-vente',t)]
     ndrc=[l for l,t in zip(labs+[title],txt_l) if (NDRC.search(t) or 'conseiller client apres-vente' in t) and not BAD.search(t)]
-    if 'pharmaceut' not in sect and re.search(r"commerce de detail|supermarche|hypermarche|superette|commerce d'alimentation",sect): mco=mco or ['(secteur commerce de détail)']
+    if not offre and 'pharmaceut' not in sect and re.search(r"commerce de detail|supermarche|hypermarche|superette|commerce d'alimentation",sect): mco=mco or ['(secteur commerce de détail)']
     if h['sub_type']!='recruteurs_lba':
         lvl=h.get('level') or ''
         if lvl and not re.search(r'BTS|Bac\b|Bac,',lvl): pass
-    if re.search(r"restauration|debits? de boissons",sect): mco=mco or ['(secteur restauration)']
+    if not offre and re.search(r"restauration|debits? de boissons",sect): mco=mco or ['(secteur restauration)']
     if not (mco or ndrc): continue
     org=h.get('organization_name') or title
     if h['sub_type']!='recruteurs_lba' and EXCL.search(n(org)): org_is_school=True
@@ -65,9 +77,9 @@ for h in d:
         Secteur=h.get('activity_sector') or '',Adresse=addr,CP=cp,Ville=ville,SIRET=siret,
         Niveau=h.get('level') or '',Contrat=', '.join(h.get('contract_type') or []),
         Publication=(h.get('publication_date') or '')[:10] if h['sub_type']!='recruteurs_lba' else '',
-        Organisme_école='Oui' if org_is_school else '',Pertinence=len(set(mco+ndrc)),Lien=url)
+        Organisme_école='Oui' if org_is_school else '',Distance_km=dist_km(h),Pertinence=len(set(mco+ndrc)),Lien=url)
 R=list(rows.values())
 R.sort(key=lambda r:(r['Type'][0]!='O', r['Ville'], r['Entreprise']))
-json.dump(R,open('prospection/result.json','w'),ensure_ascii=False)
+json.dump(R,open(f'prospection/result{DEPT}.json','w'),ensure_ascii=False)
 print(len(R)); print(collections.Counter(r['Filière'] for r in R)); print(collections.Counter(r['Type'] for r in R))
 print(collections.Counter(r['Ville'] for r in R).most_common(15))

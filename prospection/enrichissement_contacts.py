@@ -3,6 +3,7 @@
 #  - registre des entreprises (recherche-entreprises.api.gouv.fr) : dirigeants, effectif, nombre d'établissements
 # Usage : DEPT=77 python3 prospection/enrichissement_contacts.py
 import json,os,re,time,urllib.request,urllib.error,html
+from concurrent.futures import ThreadPoolExecutor
 
 DEPT=os.environ.get('DEPT','94')
 CACHE_LBA='prospection/cache_lba.json'
@@ -12,13 +13,13 @@ TRANCHES={'00':'0 salarié','01':'1-2','02':'3-5','03':'6-9','11':'10-19','12':'
 def load(p):
     try: return json.load(open(p))
     except Exception: return {}
-def get(url,tries=6):
+def get(url,tries=10):
     for t in range(tries):
         try: return urllib.request.urlopen(urllib.request.Request(url,headers={'User-Agent':'prospection-alternance'}),timeout=40).read().decode()
         except urllib.error.HTTPError as e:
             if e.code==404: return None
-            time.sleep(min(2**t,30))
-        except Exception: time.sleep(min(2**t,30))
+            time.sleep(1+t)
+        except Exception: time.sleep(1+t)
     return None
 
 def contact_lba(url):
@@ -57,18 +58,18 @@ def registre(siren):
 
 R=json.load(open(f'prospection/result{DEPT}.json'))
 cl=load(CACHE_LBA); cr=load(CACHE_RE)
-for i,r in enumerate(R):
-    if r['Lien'] not in cl:
-        cl[r['Lien']]=contact_lba(r['Lien']); time.sleep(0.25)
-    if i%100==0:
-        json.dump(cl,open(CACHE_LBA,'w')); print('lba',i,len(R),flush=True)
+todo=[r['Lien'] for r in R if r['Lien'] not in cl]
+with ThreadPoolExecutor(4) as ex:
+    for i,(u,v) in enumerate(zip(todo,ex.map(contact_lba,todo))):
+        cl[u]=v
+        if i%100==0: json.dump(cl,open(CACHE_LBA,'w')); print('lba',i,len(todo),flush=True)
 json.dump(cl,open(CACHE_LBA,'w'))
 sirens=sorted({(r['SIRET'] or cl[r['Lien']].get('siret',''))[:9] for r in R} - {''})
-for i,s in enumerate(sirens):
-    if s not in cr or cr[s] is None:
-        cr[s]=registre(s); time.sleep(0.2)
-    if i%100==0:
-        json.dump(cr,open(CACHE_RE,'w')); print('registre',i,len(sirens),flush=True)
+todo=[s for s in sirens if cr.get(s) is None]
+with ThreadPoolExecutor(5) as ex:
+    for i,(sn,v) in enumerate(zip(todo,ex.map(registre,todo))):
+        cr[sn]=v
+        if i%100==0: json.dump(cr,open(CACHE_RE,'w')); print('registre',i,len(todo),flush=True)
 json.dump(cr,open(CACHE_RE,'w'))
 
 for r in R:

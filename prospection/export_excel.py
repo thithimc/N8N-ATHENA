@@ -6,6 +6,8 @@ import os
 # Usage : DEPT=77 CENTRE_NOM="Champs-sur-Marne" python3 prospection/export_excel.py
 DEPT=os.environ.get('DEPT','94'); CENTRE_NOM=os.environ.get('CENTRE_NOM')
 R=json.load(open(f'prospection/result{DEPT}.json'))
+for r in R:
+    for k in ('Dirigeants','Téléphone','Structure','Effectif','Nb_établissements','Candidature_email','Lien_candidature'): r.setdefault(k,'')
 AVEC_DIST=any(r.get('Distance_km')!='' for r in R)
 n=lambda s:unicodedata.normalize('NFKD',s).encode('ascii','ignore').decode().lower()
 forms=collections.defaultdict(collections.Counter)
@@ -15,8 +17,8 @@ for r in R: r['Ville']=best[n(r['Ville'])]
 # dédoublonnage offres / entreprises : on garde tout, mais tri
 if AVEC_DIST: R.sort(key=lambda r:(r['Distance_km'] if r['Distance_km']!='' else 999,r['Entreprise'].lower()))
 else: R.sort(key=lambda r:(r['Catégorie'],r['Ville'],r['Entreprise'].lower()))
-cols=(['Distance_km'] if AVEC_DIST else [])+['Entreprise','Catégorie','Filière','Ville','CP','Adresse','Secteur','Métiers','Type','Intitulé','Niveau','Contrat','Publication','Organisme_école','SIRET','Pertinence','Lien']
-W={'Distance_km':11,'Entreprise':34,'Catégorie':30,'Filière':12,'Ville':22,'CP':8,'Adresse':38,'Secteur':40,'Métiers':60,'Type':30,'Intitulé':40,'Niveau':18,'Contrat':22,'Publication':12,'Organisme_école':10,'SIRET':16,'Pertinence':10,'Lien':50}
+cols=(['Distance_km'] if AVEC_DIST else [])+['Entreprise','Dirigeants','Téléphone','Structure','Catégorie','Filière','Ville','CP','Adresse','Secteur','Métiers','Type','Intitulé','Niveau','Contrat','Publication','Organisme_école','SIRET','Effectif','Nb_établissements','Candidature_email','Lien_candidature','Pertinence','Lien']
+W={'Distance_km':11,'Entreprise':34,'Dirigeants':45,'Téléphone':14,'Structure':32,'Effectif':11,'Nb_établissements':10,'Candidature_email':22,'Lien_candidature':40,'Catégorie':30,'Filière':12,'Ville':22,'CP':8,'Adresse':38,'Secteur':40,'Métiers':60,'Type':30,'Intitulé':40,'Niveau':18,'Contrat':22,'Publication':12,'Organisme_école':10,'SIRET':16,'Pertinence':10,'Lien':50}
 wb=Workbook(); first=True
 def sheet(name,rows,c=cols):
     global first
@@ -26,10 +28,12 @@ def sheet(name,rows,c=cols):
     for i,k in enumerate(c,1):
         ws.column_dimensions[get_column_letter(i)].width=W.get(k,15)
         ws.cell(1,i).font=Font(bold=True,color='FFFFFF'); ws.cell(1,i).fill=PatternFill('solid',fgColor='1F4E78')
-    if 'Lien' in c:
-        li=c.index('Lien')+1
+    for lk in ('Lien','Lien_candidature'):
+        if lk not in c: continue
+        li=c.index(lk)+1
         for row in range(2,ws.max_row+1):
-            cell=ws.cell(row,li); cell.hyperlink=cell.value; cell.font=Font(color='0563C1',underline='single')
+            cell=ws.cell(row,li)
+            if cell.value: cell.hyperlink=cell.value; cell.font=Font(color='0563C1',underline='single')
     ws.freeze_panes='B2'; ws.auto_filter.ref=ws.dimensions
 offres=[r for r in R if not r['Type'].startswith('Entreprise')]
 if not AVEC_DIST: offres.sort(key=lambda r:r['Publication'],reverse=True)

@@ -72,6 +72,12 @@ with ThreadPoolExecutor(5) as ex:
         if i%100==0: json.dump(cr,open(CACHE_RE,'w')); print('registre',i,len(todo),flush=True)
 json.dump(cr,open(CACHE_RE,'w'))
 
+CLES=re.compile(r"\((g[ée]rant|pr[ée]sident(?! du conseil de surveillance)[^)]*|directeur g[ée]n[ée]ral[^)]*|exploitant|entrepreneur[^)]*|dirigeant)\)$",re.I)
+def principaux(dirs):
+    # garde les rôles opérationnels (gérant, président, DG), 3 au maximum
+    top=[d for d in dirs if CLES.search(d)]
+    return (top or dirs)[:3]
+
 for r in R:
     c=cl.get(r['Lien']) or {}
     siret=r['SIRET'] or c.get('siret','')
@@ -80,7 +86,7 @@ for r in R:
     r['Téléphone']=c.get('phone','')
     r['Candidature_email']='Oui (via le bouton « J\'envoie ma candidature » du lien)' if c.get('hasEmail') else ''
     r['Lien_candidature']=c.get('url','')
-    r['Dirigeants']=' ; '.join(g.get('dirigeants') or [])
+    r['Dirigeants']=' ; '.join(principaux(g.get('dirigeants') or []))
     r['Effectif']=g.get('effectif','')
     nb=g.get('nb_etab')
     r['Nb_établissements']=nb if nb is not None else ''

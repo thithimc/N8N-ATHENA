@@ -2,3 +2,4 @@ prospection/all94.json
 prospection/result*.json
 prospection/all*.json
 prospection/cache_*.json
+__pycache__/

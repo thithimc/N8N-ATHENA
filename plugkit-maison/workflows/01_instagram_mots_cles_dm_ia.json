@@ -1,0 +1,750 @@
+{
+  "name": "PlugKit maison — 01 Instagram : mots-clés → DM + agent IA",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "instagram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5bcda29c-1c15-4dc3-b01c-79cd56a6610d",
+      "name": "Webhook Meta (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -300
+      ],
+      "webhookId": "8a813835-736e-4456-b0a0-7713c316d331"
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = $json.query || {};\nconst VERIFY_TOKEN = 'choisis-un-secret-long'; // identique au nœud Config\nif (q['hub.mode'] !== 'subscribe' || q['hub.verify_token'] !== VERIFY_TOKEN) throw new Error('Token invalide');\nreturn [{ json: { challenge: q['hub.challenge'] } }];\n"
+      },
+      "id": "4d76b5eb-3ee6-48de-a0a5-d56162c3b32b",
+      "name": "Vérifier token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.challenge }}",
+        "options": {}
+      },
+      "id": "9305fddf-7aa2-46a5-880a-89295e54d783",
+      "name": "Répondre challenge",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "instagram",
+        "options": {}
+      },
+      "id": "fc1ae268-3870-4878-a90e-0a90cb8d5690",
+      "name": "Webhook Meta (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "2ac41e4a-424f-471c-ade3-5c7ecea98f94"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============ CONFIG — à adapter ============\nreturn [{ json: {\n  VERIFY_TOKEN: 'choisis-un-secret-long',          // même valeur que dans l'app Meta\n  RULES_BOARD_ID: 1234567890,                       // board Monday « Automations DM »\n  LEADS_BOARD_ID: 5090687714,                       // board où créer les leads\n  LEADS_GROUP_ID: 'topics',                         // id du groupe (ex. « Leads contact »)\n  // Colonnes posées à la création du lead. Toujours forcer le statut,\n  // sinon Monday applique le défaut du groupe (cf. FIX_leads_passent_en_abandon.md).\n  LEAD_COLUMNS: { statut8__1: { label: 'Lead ❄️' } },\n  PAUSE_BOT_HOURS: 12,                              // pause de l'IA quand un humain répond\n  BRAND: 'Mon école',\n  BRAND_CONTEXT: `Formations proposées, campus, dates de rentrée, prix, lien d'inscription : à compléter.`,\n  SLACK_CHANNEL: '#leads-instagram',\n}}];\n"
+      },
+      "id": "5d6bf6bb-83db-4681-8a7a-bbb6bbc40535",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: `query { boards(ids: [${$json.RULES_BOARD_ID}]) { items_page(limit: 200) { items { id name column_values { column { title } text } } } } }` }) }}",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mondayComApi"
+      },
+      "id": "802b286b-593c-4e88-8df1-b5fcd892d7c5",
+      "name": "Charger règles (Monday)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "mondayComApi": {
+          "id": "REMPLACER",
+          "name": "Monday account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Transforme le payload Meta en événements simples + applique les règles mots-clés.\nconst cfg = $('Config').first().json;\nconst body = $('Webhook Meta (POST)').first().json.body || {};\nconst store = $getWorkflowStaticData('global');\nstore.done ??= {};      // commentaires / couples user+post déjà traités\nstore.sentMids ??= [];  // ids des messages envoyés par le bot\nstore.paused ??= {};    // senderId -> timestamp de fin de pause\nconst now = Date.now();\n\n// ---- Règles depuis Monday (colonnes lues par leur TITRE) ----\nconst items = $json.data?.boards?.[0]?.items_page?.items ?? [];\nconst col = (it, title) => (it.column_values.find(c => c.column?.title === title)?.text ?? '').trim();\nconst norm = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');\nconst rules = items.map(it => ({\n  keywords: it.name.split(',').map(k => norm(k.trim())).filter(Boolean),\n  message: col(it, 'Message DM'),\n  link: col(it, 'Lien'),\n  publicReplies: col(it, 'Réponse publique').split('|').map(s => s.trim()).filter(Boolean),\n  mediaId: col(it, 'Post ciblé (ID)'),\n  active: !['non', 'off', 'inactif'].includes(norm(col(it, 'Actif'))),\n})).filter(r => r.active && r.keywords.length && r.message);\n\nconst match = (text, mediaId) => {\n  const t = ' ' + norm(text).replace(/[^a-z0-9]+/g, ' ') + ' ';\n  return rules.find(r => (!r.mediaId || r.mediaId === mediaId)\n    && r.keywords.some(k => t.includes(' ' + k.replace(/[^a-z0-9]+/g, ' ').trim() + ' '))) || null;\n};\n\nconst out = [];\nfor (const entry of body.entry ?? []) {\n  const igId = entry.id;\n\n  // ---- Commentaires ----\n  for (const ch of entry.changes ?? []) {\n    if (ch.field !== 'comments') continue;\n    const v = ch.value || {};\n    if (!v.id || v.from?.id === igId) continue;             // ignore nos propres commentaires\n    const rule = match(v.text, v.media?.id);\n    if (!rule) continue;\n    const key = `${v.from?.id}:${v.media?.id}`;             // 1 DM par personne et par post\n    if (store.done[v.id] || store.done[key]) continue;\n    store.done[v.id] = store.done[key] = now;\n    out.push({ kind: 'comment', igId, commentId: v.id, mediaId: v.media?.id,\n      userId: v.from?.id, username: v.from?.username, text: v.text, rule });\n  }\n\n  // ---- Messages privés ----\n  for (const m of entry.messaging ?? []) {\n    const msg = m.message;\n    if (!msg || msg.is_deleted) continue;\n    if (msg.is_echo) {\n      // Echo d'un message qui n'a pas été envoyé par le bot = un humain a pris la main.\n      if (!store.sentMids.includes(msg.mid)) store.paused[m.recipient.id] = now + cfg.PAUSE_BOT_HOURS * 3600e3;\n      continue;\n    }\n    if (m.sender.id === igId || !msg.text) continue;\n    if ((store.paused[m.sender.id] ?? 0) > now) continue;   // conversation gérée par un humain\n    if (store.done[msg.mid]) continue;                      // événement renvoyé par Meta\n    store.done[msg.mid] = now;\n    const rule = match(msg.text, null);\n    out.push({ kind: rule ? 'dm_keyword' : 'dm_ai', igId, senderId: m.sender.id,\n      text: msg.text, mid: msg.mid, rule });\n  }\n}\n\n// ménage : on garde 30 jours d'historique\nfor (const [k, t] of Object.entries(store.done)) if (now - t > 30 * 864e5) delete store.done[k];\nstore.sentMids = store.sentMids.slice(-500);\n\nreturn out.map(json => ({ json }));\n"
+      },
+      "id": "f46fb2e7-0ccc-4b6a-bb4b-db55e3ec82ba",
+      "name": "Normaliser + matcher",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(i => i.json.kind === 'comment').map(i => {\n  const r = i.json.rule;\n  const text = [r.message.replace('{prenom}', i.json.username || ''), r.link].filter(Boolean).join('\\n\\n');\n  return { json: { ...i.json, body: { recipient: { comment_id: i.json.commentId }, message: { text } } } };\n});\n"
+      },
+      "id": "052f72ed-8b0c-4bfb-a33d-859d5fa6ab84",
+      "name": "→ Commentaires",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $json.igId }}/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "5befab7a-de78-43a0-b485-54d78eb7e17f",
+      "name": "DM privé (private reply)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        -200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('→ Commentaires').all().filter(i => i.json.rule.publicReplies.length).map(i => {\n  const opts = i.json.rule.publicReplies;               // plusieurs variantes = moins « spam »\n  const message = opts[Math.floor(Math.random() * opts.length)].replace('{prenom}', '@' + (i.json.username || ''));\n  return { json: { commentId: i.json.commentId, body: { message } } };\n});\n"
+      },
+      "id": "4d4a0bf4-56f4-4063-86a4-92b9cf564164",
+      "name": "Préparer réponse publique",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $json.commentId }}/replies",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "e6a2aab4-8090-4bcd-9d8f-4971b52e1531",
+      "name": "Répondre au commentaire",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        -200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nreturn $('→ Commentaires').all().map(i => {\n  const name = `@${i.json.username} — ${i.json.rule.keywords[0].toUpperCase()} (Instagram)`;\n  const query = `mutation ($b: ID!, $g: String, $n: String!, $c: JSON) {\n    create_item(board_id: $b, group_id: $g, item_name: $n, column_values: $c) { id } }`;\n  return { json: { body: { query, variables: { b: cfg.LEADS_BOARD_ID, g: cfg.LEADS_GROUP_ID, n: name,\n    c: JSON.stringify(cfg.LEAD_COLUMNS) } } } };\n});\n"
+      },
+      "id": "73225f97-882e-4515-9bc7-576641ba1dc2",
+      "name": "Préparer lead (commentaire)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mondayComApi"
+      },
+      "id": "53868c2c-bf73-4112-8efe-a03a41c09d3a",
+      "name": "Créer lead Monday",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        -200
+      ],
+      "credentials": {
+        "mondayComApi": {
+          "id": "REMPLACER",
+          "name": "Monday account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(i => i.json.kind === 'dm_keyword').map(i => {\n  const r = i.json.rule;\n  return { json: { ...i.json, body: { recipient: { id: i.json.senderId },\n    message: { text: [r.message.replace('{prenom}', ''), r.link].filter(Boolean).join('\\n\\n') } } } };\n});\n"
+      },
+      "id": "5656dd9c-264c-4372-a4cf-eb2231c031fb",
+      "name": "→ DM mot-clé",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $json.igId }}/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "5f5483f5-f8e1-4186-99e9-2ec869897503",
+      "name": "Envoyer DM (mot-clé)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1120,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const store = $getWorkflowStaticData('global');\nstore.sentMids ??= [];\nfor (const it of $input.all()) if (it.json.message_id) store.sentMids.push(it.json.message_id);\nreturn $input.all();\n"
+      },
+      "id": "b6d15203-1a50-49a5-8a3f-c25bb5c81e2d",
+      "name": "Mémoriser envoi",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(i => i.json.kind === 'dm_ai');\n"
+      },
+      "id": "9bb2b930-7dff-497f-97a8-c3146a141caf",
+      "name": "→ DM pour IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=Tu réponds aux messages privés Instagram de {{ $('Config').first().json.BRAND }}.\nContexte (seule source de vérité) :\n{{ $('Config').first().json.BRAND_CONTEXT }}\n\nRègles :\n- Réponds en français, ton chaleureux, 2 à 4 phrases max, pas de markdown.\n- N'invente jamais un prix, une date ou une info absente du contexte : propose plutôt un échange avec l'équipe.\n- Objectif : qualifier (formation visée, ville/campus, niveau) puis demander email ou téléphone pour être recontacté.\n- Si la personne demande un humain, est mécontente, ou si tu ne sais pas : termine ta réponse par [HUMAIN]."
+        }
+      },
+      "id": "6175d72c-86b5-4e9a-b584-c4a45320eca6",
+      "name": "Agent IA",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1120,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-5-5",
+          "mode": "id"
+        },
+        "options": {
+          "maxTokensToSample": 400,
+          "temperature": 0.4
+        }
+      },
+      "id": "72e0a40b-b0a0-4f49-a8b7-125569a87742",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        470
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REMPLACER",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ 'ig-' + $('→ DM pour IA').item.json.senderId }}",
+        "contextWindowLength": 12
+      },
+      "id": "6581296d-ee23-4669-89eb-0688332958d9",
+      "name": "Mémoire conversation",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1200,
+        470
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((i, idx) => {\n  const src = $('→ DM pour IA').all()[idx].json;\n  const raw = String(i.json.output || '');\n  const handoff = raw.includes('[HUMAIN]');\n  const text = raw.replace('[HUMAIN]', '').trim().slice(0, 990) || \"Merci pour ton message, quelqu'un de l'équipe te répond très vite !\";\n  return { json: { ...src, handoff, reply: text,\n    body: { recipient: { id: src.senderId }, message: { text } } } };\n});\n"
+      },
+      "id": "0dbcf9c8-2178-4442-b023-c0936779991a",
+      "name": "Préparer réponse IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.instagram.com/v23.0/{{ $json.igId }}/messages",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "e1d9924d-0c78-435b-bef4-a5bea65cef26",
+      "name": "Envoyer DM (IA)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1560,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const store = $getWorkflowStaticData('global');\nstore.sentMids ??= [];\nfor (const it of $input.all()) if (it.json.message_id) store.sentMids.push(it.json.message_id);\nreturn $input.all();\n"
+      },
+      "id": "c08ceaf5-e970-4b7c-921f-a8e61479a16c",
+      "name": "Mémoriser envoi IA",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        250
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Si la personne donne un email ou un téléphone → création du lead dans Monday.\nconst cfg = $('Config').first().json;\nconst out = [];\nfor (const i of $('Préparer réponse IA').all()) {\n  const t = i.json.text;\n  const email = t.match(/[\\w.+-]+@[\\w-]+\\.[\\w.-]+/)?.[0];\n  const phone = t.match(/(?:\\+33|0)\\s?[1-9](?:[\\s.-]?\\d{2}){4}/)?.[0];\n  if (!email && !phone) continue;\n  const cols = { ...cfg.LEAD_COLUMNS };\n  if (email) cols.e_mail__1 = { email, text: email };        // ids de colonnes du board Leads\n  if (phone) cols.phone = { phone: phone.replace(/\\D/g, ''), countryShortName: 'FR' };\n  const query = `mutation ($b: ID!, $g: String, $n: String!, $c: JSON) {\n    create_item(board_id: $b, group_id: $g, item_name: $n, column_values: $c, create_labels_if_missing: true) { id } }`;\n  out.push({ json: { body: { query, variables: { b: cfg.LEADS_BOARD_ID, g: cfg.LEADS_GROUP_ID,\n    n: `${email || phone} (DM Instagram)`, c: JSON.stringify(cols) } } } });\n}\nreturn out;\n"
+      },
+      "id": "6f6f5971-a32a-4e72-833c-87b1cb57c581",
+      "name": "Lead détecté ?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        150
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {},
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "mondayComApi"
+      },
+      "id": "4989ef0d-4877-4a00-9d83-5a8c27899571",
+      "name": "Créer lead Monday (DM)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        150
+      ],
+      "credentials": {
+        "mondayComApi": {
+          "id": "REMPLACER",
+          "name": "Monday account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const cfg = $('Config').first().json;\nconst store = $getWorkflowStaticData('global');\nstore.paused ??= {};\nreturn $('Préparer réponse IA').all().filter(i => i.json.handoff).map(i => {\n  store.paused[i.json.senderId] = Date.now() + cfg.PAUSE_BOT_HOURS * 3600e3; // l'IA se tait\n  return { json: { text: `🙋 Un prospect Instagram demande un humain.\\nMessage : « ${i.json.text} »\\nRéponds-lui directement dans la boîte Instagram (l'IA est en pause ${cfg.PAUSE_BOT_HOURS} h pour lui).` } };\n});\n"
+      },
+      "id": "abe6cc28-3b13-47db-9d2e-418fc1b7f181",
+      "name": "Escalade humaine ?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        350
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config').first().json.SLACK_CHANNEL }}",
+          "mode": "name"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "id": "0d313093-47c2-4d2b-9142-e62960a9953e",
+      "name": "Alerte Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        2220,
+        350
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "REMPLACER",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook Meta (GET)": {
+      "main": [
+        [
+          {
+            "node": "Vérifier token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vérifier token": {
+      "main": [
+        [
+          {
+            "node": "Répondre challenge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Meta (POST)": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Charger règles (Monday)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Charger règles (Monday)": {
+      "main": [
+        [
+          {
+            "node": "Normaliser + matcher",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliser + matcher": {
+      "main": [
+        [
+          {
+            "node": "→ Commentaires",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "→ DM mot-clé",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "→ DM pour IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ Commentaires": {
+      "main": [
+        [
+          {
+            "node": "DM privé (private reply)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DM privé (private reply)": {
+      "main": [
+        [
+          {
+            "node": "Préparer réponse publique",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Préparer lead (commentaire)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer réponse publique": {
+      "main": [
+        [
+          {
+            "node": "Répondre au commentaire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer lead (commentaire)": {
+      "main": [
+        [
+          {
+            "node": "Créer lead Monday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ DM mot-clé": {
+      "main": [
+        [
+          {
+            "node": "Envoyer DM (mot-clé)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer DM (mot-clé)": {
+      "main": [
+        [
+          {
+            "node": "Mémoriser envoi",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "→ DM pour IA": {
+      "main": [
+        [
+          {
+            "node": "Agent IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoire conversation": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent IA",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent IA": {
+      "main": [
+        [
+          {
+            "node": "Préparer réponse IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Préparer réponse IA": {
+      "main": [
+        [
+          {
+            "node": "Envoyer DM (IA)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envoyer DM (IA)": {
+      "main": [
+        [
+          {
+            "node": "Mémoriser envoi IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mémoriser envoi IA": {
+      "main": [
+        [
+          {
+            "node": "Lead détecté ?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Escalade humaine ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead détecté ?": {
+      "main": [
+        [
+          {
+            "node": "Créer lead Monday (DM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalade humaine ?": {
+      "main": [
+        [
+          {
+            "node": "Alerte Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

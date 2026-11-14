@@ -1,0 +1,276 @@
+{
+  "name": "PlugKit maison — 02 Serveur MCP Instagram (pour Claude / ChatGPT)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "plugkit-instagram",
+        "authentication": "bearerAuth"
+      },
+      "id": "d9f0e890-8c1b-4936-a177-4a32693025db",
+      "name": "MCP Server",
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "8f6c064e-ad3c-4d22-8290-cdba724737a0",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REMPLACER",
+          "name": "MCP PlugKit token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Statistiques du compte Instagram sur les N derniers jours (max 30) : portée, vues, interactions, comptes engagés, abonnés gagnés.",
+        "method": "GET",
+        "url": "https://graph.instagram.com/v23.0/me/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "metric",
+              "value": "reach,views,total_interactions,accounts_engaged,follows_and_unfollows"
+            },
+            {
+              "name": "metric_type",
+              "value": "total_value"
+            },
+            {
+              "name": "period",
+              "value": "day"
+            },
+            {
+              "name": "since",
+              "value": "={{ Math.floor(Date.now()/1000) - Math.min(30, $fromAI('jours', 'Nombre de jours à analyser (1-30)', 'number')) * 86400 }}"
+            },
+            {
+              "name": "until",
+              "value": "={{ Math.floor(Date.now()/1000) }}"
+            }
+          ]
+        }
+      },
+      "id": "d987a3e3-9006-4d3b-b1f8-888270f9eb34",
+      "name": "ig_stats_compte",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Liste les derniers posts/reels Instagram avec likes, commentaires, lien et date. Utile pour récupérer un media_id.",
+        "method": "GET",
+        "url": "https://graph.instagram.com/v23.0/me/media",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,caption,media_type,media_product_type,permalink,timestamp,like_count,comments_count"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $fromAI('limite', 'Nombre de posts (1-50)', 'number') }}"
+            }
+          ]
+        }
+      },
+      "id": "eede364e-53af-48cb-9163-ab23b26bef80",
+      "name": "ig_derniers_posts",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Statistiques détaillées d'un post ou reel (vues, portée, partages, enregistrements).",
+        "method": "GET",
+        "url": "https://graph.instagram.com/v23.0/{{ $fromAI('media_id', 'ID du media Instagram', 'string') }}/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "metric",
+              "value": "views,reach,likes,comments,shares,saved,total_interactions"
+            }
+          ]
+        }
+      },
+      "id": "06908e0e-b162-4a15-8822-feb2ff6910cf",
+      "name": "ig_stats_post",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        0,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Liste les commentaires d'un post (id, texte, auteur, date).",
+        "method": "GET",
+        "url": "https://graph.instagram.com/v23.0/{{ $fromAI('media_id', 'ID du media Instagram', 'string') }}/comments",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,text,username,timestamp,replies{id,text,username}"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "id": "a08c6c43-a7d2-4c1b-ae5e-af33a30d3848",
+      "name": "ig_commentaires",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Publie une réponse publique sous un commentaire. Toujours montrer le texte à l'utilisateur et attendre sa validation avant d'appeler cet outil.",
+        "method": "POST",
+        "url": "https://graph.instagram.com/v23.0/{{ $fromAI('comment_id', 'ID du commentaire', 'string') }}/replies",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {},
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $fromAI('message', 'Texte de la réponse', 'string') }}"
+            }
+          ]
+        }
+      },
+      "id": "d188d985-f9b9-4d86-9611-28b64bcc4613",
+      "name": "ig_repondre_commentaire",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        250
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "ig_stats_compte": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ig_derniers_posts": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ig_stats_post": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ig_commentaires": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ig_repondre_commentaire": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

@@ -1,0 +1,199 @@
+{
+  "name": "PlugKit maison — 03 Rapport hebdo Instagram → Slack",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "4298f101-d34a-4039-97ee-860157c7884e",
+      "name": "Chaque lundi 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v23.0/me/insights",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "metric",
+              "value": "reach,views,total_interactions,accounts_engaged,follows_and_unfollows"
+            },
+            {
+              "name": "metric_type",
+              "value": "total_value"
+            },
+            {
+              "name": "period",
+              "value": "day"
+            },
+            {
+              "name": "since",
+              "value": "={{ Math.floor(Date.now()/1000) - 7*86400 }}"
+            },
+            {
+              "name": "until",
+              "value": "={{ Math.floor(Date.now()/1000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e8b5a6ce-67b1-4ce4-869c-a9048005e885",
+      "name": "Stats compte (7 j)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://graph.instagram.com/v23.0/me/media",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,caption,media_product_type,permalink,timestamp,like_count,comments_count"
+            },
+            {
+              "name": "limit",
+              "value": "25"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3ebfd163-99d9-4639-8cce-7467f4b32252",
+      "name": "Posts récents",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Instagram Token (Bearer)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const stats = $('Stats compte (7 j)').first().json.data ?? [];\nconst val = n => stats.find(s => s.name === n)?.total_value?.value ?? 'n/d';\nconst fu = stats.find(s => s.name === 'follows_and_unfollows')?.total_value?.breakdowns?.[0]?.results ?? [];\nconst weekAgo = Date.now() - 7 * 864e5;\nconst posts = ($json.data ?? []).filter(p => new Date(p.timestamp) > weekAgo)\n  .sort((a, b) => (b.like_count + b.comments_count) - (a.like_count + a.comments_count));\nconst lines = posts.slice(0, 3).map((p, i) =>\n  `${i + 1}. ${(p.caption || '(sans légende)').split('\\n')[0].slice(0, 60)} — ❤️ ${p.like_count} 💬 ${p.comments_count} <${p.permalink}|voir>`);\nconst text = [\n  '*📊 Instagram — 7 derniers jours*',\n  `Portée : *${val('reach')}* · Vues : *${val('views')}* · Interactions : *${val('total_interactions')}*`,\n  `Comptes engagés : *${val('accounts_engaged')}* · Abonnés : ${fu.map(r => `${r.dimension_values?.[0]}: ${r.value}`).join(' / ') || 'n/d'}`,\n  `Posts publiés : *${posts.length}*`,\n  lines.length ? '*Top posts :*\\n' + lines.join('\\n') : '',\n].filter(Boolean).join('\\n');\nreturn [{ json: { text } }];\n"
+      },
+      "id": "e7cf6b38-351d-4dfc-ab3f-bcf7cc1adfac",
+      "name": "Mettre en forme",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#social",
+          "mode": "name"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "id": "6abfbb90-7228-4084-81b3-0a9db0232af4",
+      "name": "Envoyer Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "REMPLACER",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chaque lundi 9h": {
+      "main": [
+        [
+          {
+            "node": "Stats compte (7 j)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stats compte (7 j)": {
+      "main": [
+        [
+          {
+            "node": "Posts récents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Posts récents": {
+      "main": [
+        [
+          {
+            "node": "Mettre en forme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mettre en forme": {
+      "main": [
+        [
+          {
+            "node": "Envoyer Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
